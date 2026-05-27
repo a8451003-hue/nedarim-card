@@ -262,6 +262,7 @@ input::placeholder{color:var(--fnt)}
     </div>
     <div class="tbar">
       <button class="btn btn-o btn-sm" id="checkAllBtn">🔄 רענן הכל</button>
+      <button class="btn btn-o btn-sm" id="exportBtn">💾 גיבוי TXT</button>
       <button class="btn btn-d btn-sm" id="clearAllBtn">🗑 נקה הכל</button>
     </div>
   </div>
@@ -568,6 +569,43 @@ document.getElementById('addBtn').onclick=addCard;
 document.getElementById('cardInput').addEventListener('keydown',e=>{if(e.key==='Enter')addCard();});
 document.getElementById('cardInput').addEventListener('input',function(){this.value=fmt(this.value);});
 document.getElementById('checkAllBtn').onclick=async()=>{if(!cards.length){toast('הוסף כרטיסים קודם');return;}toast('מרענן…');for(const c of[...cards])await checkCard(c.id);toast('עודכן הכל ✓');};
+document.getElementById('exportBtn').onclick = async function () {
+  if (!cards.length) { toast('אין מספרים לגיבוי'); return; }
+  const lines = [
+    'Nedarim backup',
+    'Created: ' + new Date().toLocaleString('he-IL'),
+    'Count: ' + cards.length,
+    '',
+    ...cards.map((c, i) => `${i + 1}. ${c.number}`)
+  ];
+  const text = lines.join('\n');
+  const filename = `backup-${new Date().toISOString().slice(0, 10)}.txt`;
+  try {
+    if (window.showSaveFilePicker) {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: 'Text Files', accept: { 'text/plain': ['.txt'] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(text);
+      await writable.close();
+    } else {
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+    }
+    toast('הגיבוי נשמר');
+  } catch (e) {
+    toast('הייצוא בוטל או נכשל');
+  }
+};
+
 document.getElementById('clearAllBtn').onclick=()=>{
   if(!cards.length)return;
   confirmDouble('נקה הכל','כל הכרטיסים יימחקו לצמיתות',()=>{cards=[];save();render();toast('נוקתה ✓');});
