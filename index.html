@@ -302,6 +302,14 @@ input::placeholder{color:var(--fnt)}
       <div class="modal-section-title">קולות</div>
       <button class="btn btn-o" onclick="window.showVoices()">🎙 בדוק קולות זמינים</button>
     </div>
+    <div class="modal-section">
+      <div class="modal-section-title">גיבוי כרטיסים</div>
+      <div style="display:flex;gap:var(--sp2);flex-wrap:wrap">
+        <button class="btn btn-p" onclick="window.backupCards()">💾 גיבוי להורדות</button>
+        <button class="btn btn-o" onclick="window.restoreCards()">📂 שחזר מגיבוי</button>
+      </div>
+      <div style="font-size:var(--text-xs);color:var(--mut);margin-top:var(--sp2)">הגיבוי נשמר כקובץ טקסט בתיקיית ההורדות</div>
+    </div>
     <button class="btn btn-o modal-close" onclick="document.getElementById('settingsModal').classList.remove('show')">סגור</button>
   </div>
 </div>
@@ -319,6 +327,7 @@ input::placeholder{color:var(--fnt)}
 </div>
 
 <div id="toast"></div>
+<input type="file" id="restoreInput" accept=".txt,.json" style="display:none">
 
 <script>
 (()=>{
@@ -335,8 +344,14 @@ const mask=s=>{const d=dig(s);if(d.length<8)return fmt(s);return '****-****-'+d.
 const uid=()=>Math.random().toString(36).slice(2,10);
 const parseAmt=s=>{if(!s)return 0;const m=String(s).match(/[\d.]+/);return m?parseFloat(m[0]):0;};
 
-function save(){try{localStorage.setItem(SKEY,JSON.stringify(cards.map(c=>({id:c.id,number:c.number}))));}catch(e){}}
-function loadSaved(){try{const r=localStorage.getItem(SKEY);return r?JSON.parse(r):[];}catch(e){return[];}}
+function save(){
+  const data=JSON.stringify(cards.map(c=>({id:c.id,number:c.number})));
+  try{localStorage.setItem(SKEY,data);}catch(e){}
+  try{sessionStorage.setItem(SKEY,data);}catch(e){}
+}
+function loadSaved(){
+  try{const r=localStorage.getItem(SKEY)||sessionStorage.getItem(SKEY);return r?JSON.parse(r):[];}catch(e){return[];}
+}
 function makeCard(id,number){return{id,number,status:'idle',balance:null,kupaName:'',tlushim:[],errorMsg:'',revealed:false};}
 
 // ── Toast ──
@@ -527,6 +542,39 @@ function render(){
 }
 
 // ── Globals ──
+window.backupCards=function(){
+  if(!cards.length){toast('אין כרטיסים לגיבוי');return;}
+  const lines=cards.map(c=>c.number).join('
+');
+  const blob=new Blob([lines],{type:'text/plain'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='nedarim-backup-'+new Date().toISOString().slice(0,10)+'.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('גיבוי הורד ✓');
+};
+window.restoreCards=function(){
+  document.getElementById('restoreInput').click();
+};
+document.getElementById('restoreInput').onchange=function(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const lines=ev.target.result.split(/[
+,]+/).map(l=>l.replace(/\D/g,'').trim()).filter(l=>l.length>=8);
+    if(!lines.length){toast('לא נמצאו כרטיסים בקובץ');return;}
+    let added=0;
+    for(const num of lines){
+      if(!cards.find(c=>dig(c.number)===num)){cards.push(makeCard(uid(),num));added++;}
+    }
+    save();render();
+    toast('יובאו '+added+' כרטיסים ✓');
+    for(const c of cards.filter(x=>x.status==='idle'))checkCard(c.id);
+  };
+  reader.readAsText(file);
+  this.value='';
+};
 window._check=id=>checkCard(id);
 window._reveal=id=>{const c=cards.find(x=>x.id===id);if(c){c.revealed=!c.revealed;save();render();}};
 window._copy=t=>copyText(t);
