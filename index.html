@@ -248,8 +248,8 @@ input::placeholder{color:var(--fnt)}
       </div>
     </div>
     <div class="topbar-btns">
-      <button class="icobtn" id="settingsBtn" title="הגדרות">⚙️</button>
-      <button class="icobtn" id="themeBtn" title="עבור מצב" aria-label="החלפת ערכת נושא">🌙</button>
+      <button class="icobtn" id="settingsBtn" title="הגדרות" onclick="document.getElementById('settingsModal').classList.add('show')">⚙️</button>
+      <button class="icobtn" id="themeBtn" title="עבור מצב" aria-label="החלפת ערכת נושא" onclick="(function(){const cur=document.documentElement.getAttribute('data-theme');const next=cur==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',next);document.getElementById('themeBtn').textContent=next==='dark'?'🌙':'☀️';})()">🌙</button>
     </div>
   </div>
 
@@ -286,7 +286,7 @@ input::placeholder{color:var(--fnt)}
 </div>
 
 <!-- Settings Modal -->
-<div class="modal-bg" id="settingsModal">
+<div class="modal-bg" id="settingsModal" onclick="if(event.target===this)this.classList.remove('show')">
   <div class="modal">
     <div class="modal-title">⚙️ הגדרות</div>
     <div class="modal-section">
@@ -601,6 +601,20 @@ function addCard(){
 
 // ── Settings modal ──
 function initButtons(){
+
+setTimeout(()=>{
+  const sb=document.getElementById('settingsBtn');
+  const tb=document.getElementById('themeBtn');
+  const sm=document.getElementById('settingsModal');
+  if(sb && !sb._wired){sb._wired=true;sb.onclick=()=>sm.classList.add('show');}
+  if(tb && !tb._wired){tb._wired=true;tb.onclick=()=>{
+    const cur=document.documentElement.getAttribute('data-theme');
+    const next=cur==='dark'?'light':'dark';
+    document.documentElement.setAttribute('data-theme',next);
+    tb.textContent=next==='dark'?'🌙':'☀️';
+  };}
+},300);
+
   const settingsBtn=document.getElementById('settingsBtn');
   const settingsModal=document.getElementById('settingsModal');
   const themeBtn=document.getElementById('themeBtn');
@@ -623,9 +637,12 @@ document.getElementById('clearAllBtn').onclick=()=>{
   confirmDouble('נקה הכל','כל הכרטיסים יימחקו לצמיתות',()=>{cards=[];save();render();toast('נוקתה ✓');});
 };
 
-initButtons();
+document.addEventListener('DOMContentLoaded',()=>{
+  initButtons();
+  startApp();
+});
 
-(async()=>{
+function startApp(){
   const saved=loadSaved();
   cards=saved.map(s=>makeCard(s.id,s.number));
   render();
