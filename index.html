@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+
+<html dir="rtl" lang="he">
 <head>
-<link rel="manifest" href="/nedarim-card/manifest.json">
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<meta name="theme-color" content="#6c47ff"/>
+<link href="/nedarim-card/manifest.json" rel="manifest"/>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<meta content="#6c47ff" name="theme-color"/>
 <title>nedarim-card-balance-app</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
 <style>
 :root{
   --text-xs:clamp(.75rem,.7rem + .25vw,.875rem);
@@ -236,94 +237,148 @@ input::placeholder{color:var(--fnt)}
   const d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
   document.documentElement.setAttribute('data-theme',d);
 })();
+
+
+window.__backupBound = true;
+function exportBackupTxt(){
+  if (!cards || !cards.length) { toast('אין מספרים לגיבוי'); return; }
+  const lines = [
+    'Nedarim backup',
+    'Created: ' + new Date().toLocaleString('he-IL'),
+    'Count: ' + cards.length,
+    '',
+    ...cards.map((c, i) => `${i + 1}. ${c.number}`)
+  ];
+  const text = lines.join('\n');
+  const filename = `backup-${new Date().toISOString().slice(0,10)}.txt`;
+  const doDownload = () => {
+    const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.style.display='none';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+  };
+  (async () => {
+    try {
+      if (window.showSaveFilePicker) {
+        const handle = await window.showSaveFilePicker({suggestedName: filename, types:[{description:'Text Files', accept:{'text/plain':['.txt']}}]});
+        const writable = await handle.createWritable();
+        await writable.write(text);
+        await writable.close();
+      } else doDownload();
+      toast('הגיבוי נשמר');
+    } catch(e) {
+      if (String(e && e.name) !== 'AbortError') toast('הייצוא נכשל');
+    }
+  })();
+}
+function importBackupTxt(){
+  const inp = document.getElementById('importFile');
+  if (!inp) { toast('חסר רכיב ייבוא'); return; }
+  inp.value = '';
+  inp.onchange = async () => {
+    const file = inp.files && inp.files[0];
+    if (!file) return;
+    try {
+      const raw = await file.text();
+      const nums = [...raw.matchAll(/\b\d{8,23}\b/g)].map(m => m[0]);
+      const unique = [...new Set(nums)];
+      if (!unique.length) { toast('לא נמצא גיבוי תקין'); return; }
+      const existing = new Set(cards.map(c => c.number));
+      let added = 0;
+      for (const n of unique) {
+        if (!existing.has(n)) { cards.unshift(makeCard(uid(), n)); added++; }
+      }
+      save(); render();
+      toast(added ? `יובאו ${added} מספרים` : 'אין מספרים חדשים לייבוא');
+    } catch (e) { toast('קריאת הקובץ נכשלה'); }
+  };
+  inp.click();
+}
+const bindBackupBtns = () => {
+  const eb = document.getElementById('exportBtn');
+  const ib = document.getElementById('importBtn');
+  if (eb) eb.onclick = exportBackupTxt;
+  if (ib) ib.onclick = importBackupTxt;
+};
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindBackupBtns); else bindBackupBtns();
 </script>
 <div class="app">
-  <!-- Topbar -->
-  <div class="topbar">
-    <div class="brand">
-      <div class="brand-logo">💳</div>
-      <div>
-        <div class="brand-text">נדרים+</div>
-        <div class="brand-sub">כרטיסי מתנה</div>
-      </div>
-    </div>
-    <div class="topbar-btns">
-      <button class="icobtn" id="settingsBtn" title="הגדרות">⚙️</button>
-      <button class="icobtn" id="themeBtn" title="עבור מצב" aria-label="החלפת ערכת נושא">🌙</button>
-    </div>
-  </div>
-
-  <!-- Add card -->
-  <div class="add-panel">
-    <label class="flbl" for="cardInput">מספר כרטיס</label>
-    <div class="irow">
-      <input id="cardInput" type="tel" inputmode="numeric" maxlength="23" placeholder="הזן מספר כרטיס…" autocomplete="off"/>
-      <button class="btn btn-p" id="addBtn">+ הוסף</button>
-    </div>
-    <div class="tbar">
-      <button class="btn btn-o btn-sm" id="checkAllBtn">🔄 רענן הכל</button>
-      <button class="btn btn-o btn-sm" id="exportBtn">💾 גיבוי TXT</button>
-      <button class="btn btn-o btn-sm" id="importBtn">📥 ייבוא TXT</button>
-      <button class="btn btn-d btn-sm" id="clearAllBtn">🗑 נקה הכל</button>
-    </div>
-  </div>
-
-  <!-- Sumbar -->
-  <div id="sumbar" class="sumbar" style="display:none">
-    <div><div class="sum-val" id="sumTotal">0 ₪</div><div class="sum-lbl">סה"כ יתרה</div></div>
-    <div class="sum-sep"></div>
-    <div><div class="sum-val" id="sumCount">0</div><div class="sum-lbl">כרטיסים</div></div>
-    <div class="sum-sep"></div>
-    <div><div class="sum-val" id="sumDone">0</div><div class="sum-lbl">נבדקו</div></div>
-  </div>
-
-  <div id="secTitle" class="sec-title" style="display:none">הכרטיסים שלי</div>
-  <div id="clist" class="clist"></div>
-
-  <div id="emptyState" class="empty">
-    <svg width="56" height="56" viewBox="0 0 56 56" fill="none"><rect x="8" y="16" width="40" height="28" rx="6" stroke="currentColor" stroke-width="2.5"/><path d="M8 24h40" stroke="currentColor" stroke-width="2.5"/><rect x="14" y="31" width="10" height="4" rx="2" fill="currentColor"/></svg>
-    <h3>אין כרטיסים עדיין</h3>
-    <p>הזן מספר כרטיס נדרים+ להוספה</p>
-  </div>
+<!-- Topbar -->
+<div class="topbar">
+<div class="brand">
+<div class="brand-logo">💳</div>
+<div>
+<div class="brand-text">נדרים+</div>
+<div class="brand-sub">כרטיסי מתנה</div>
 </div>
-
+</div>
+<div class="topbar-btns">
+<button class="icobtn" id="settingsBtn" title="הגדרות">⚙️</button>
+<button aria-label="החלפת ערכת נושא" class="icobtn" id="themeBtn" title="עבור מצב">🌙</button>
+</div>
+</div>
+<!-- Add card -->
+<div class="add-panel">
+<label class="flbl" for="cardInput">מספר כרטיס</label>
+<div class="irow">
+<input autocomplete="off" id="cardInput" inputmode="numeric" maxlength="23" placeholder="הזן מספר כרטיס…" type="tel"/>
+<button class="btn btn-p" id="addBtn">+ הוסף</button>
+</div>
+<div class="tbar">
+<button class="btn btn-o btn-sm" id="checkAllBtn">🔄 רענן הכל</button>
+<button class="btn btn-o btn-sm" id="importBtn">📥 ייבוא TXT</button><button class="btn btn-o btn-sm" id="exportBtn">💾 גיבוי TXT</button><button class="btn btn-d btn-sm" id="clearAllBtn">🗑 נקה הכל</button>
+</div>
+</div>
+<!-- Sumbar -->
+<div class="sumbar" id="sumbar" style="display:none">
+<div><div class="sum-val" id="sumTotal">0 ₪</div><div class="sum-lbl">סה"כ יתרה</div></div>
+<div class="sum-sep"></div>
+<div><div class="sum-val" id="sumCount">0</div><div class="sum-lbl">כרטיסים</div></div>
+<div class="sum-sep"></div>
+<div><div class="sum-val" id="sumDone">0</div><div class="sum-lbl">נבדקו</div></div>
+</div>
+<div class="sec-title" id="secTitle" style="display:none">הכרטיסים שלי</div>
+<div class="clist" id="clist"></div>
+<div class="empty" id="emptyState">
+<svg fill="none" height="56" viewbox="0 0 56 56" width="56"><rect height="28" rx="6" stroke="currentColor" stroke-width="2.5" width="40" x="8" y="16"></rect><path d="M8 24h40" stroke="currentColor" stroke-width="2.5"></path><rect fill="currentColor" height="4" rx="2" width="10" x="14" y="31"></rect></svg>
+<h3>אין כרטיסים עדיין</h3>
+<p>הזן מספר כרטיס נדרים+ להוספה</p>
+</div>
+</div>
 <!-- Settings Modal -->
-<div class="modal-bg" id="settingsModal">
-  <div class="modal">
-    <div class="modal-title">⚙️ הגדרות</div>
-    <div class="modal-section">
-      <div class="modal-section-title">מהירות הקראה</div>
-      <div class="rate-bar">
-        <button class="rate-btn" data-rate="0.7" onclick="window.setRate(0.7,this)">🐢 איטי</button>
-        <button class="rate-btn active" data-rate="1.0" onclick="window.setRate(1.0,this)">▶ רגיל</button>
-        <button class="rate-btn" data-rate="1.3" onclick="window.setRate(1.3,this)">⚡ מהיר</button>
-        <button class="rate-btn" data-rate="1.6" onclick="window.setRate(1.6,this)">🚀 מהיר מאוד</button>
-      </div>
-    </div>
-    <div class="modal-section">
-      <div class="modal-section-title">קולות</div>
-      <button class="btn btn-o" onclick="window.showVoices()">🎙 בדוק קולות זמינים</button>
-    </div>
-    <button class="btn btn-o modal-close" onclick="document.getElementById('settingsModal').classList.remove('show')">סגור</button>
-  </div>
+<input accept=".txt,text/plain" id="importFile" style="display:none" type="file"/><div class="modal-bg" id="settingsModal">
+<div class="modal">
+<div class="modal-title">⚙️ הגדרות</div>
+<div class="modal-section">
+<div class="modal-section-title">מהירות הקראה</div>
+<div class="rate-bar">
+<button class="rate-btn" data-rate="0.7" onclick="window.setRate(0.7,this)">🐢 איטי</button>
+<button class="rate-btn active" data-rate="1.0" onclick="window.setRate(1.0,this)">▶ רגיל</button>
+<button class="rate-btn" data-rate="1.3" onclick="window.setRate(1.3,this)">⚡ מהיר</button>
+<button class="rate-btn" data-rate="1.6" onclick="window.setRate(1.6,this)">🚀 מהיר מאוד</button>
 </div>
-
-<input id="importFile" type="file" accept=".txt,text/plain" style="display:none" />
-
-  <!-- Dialog -->
+</div>
+<div class="modal-section">
+<div class="modal-section-title">קולות</div>
+<button class="btn btn-o" onclick="window.showVoices()">🎙 בדוק קולות זמינים</button>
+</div>
+<button class="btn btn-o modal-close" onclick="document.getElementById('settingsModal').classList.remove('show')">סגור</button>
+</div>
+</div>
+<!-- Dialog -->
 <div class="dlg-bg" id="dlgBg">
-  <div class="dlg">
-    <h3 id="dlgTitle"></h3>
-    <p id="dlgText"></p>
-    <div class="dlg-btns">
-      <button class="btn btn-o" id="dlgCancel">ביטול</button>
-      <button class="btn btn-p" id="dlgOk">המשך</button>
-    </div>
-  </div>
+<div class="dlg">
+<h3 id="dlgTitle"></h3>
+<p id="dlgText"></p>
+<div class="dlg-btns">
+<button class="btn btn-o" id="dlgCancel">ביטול</button>
+<button class="btn btn-p" id="dlgOk">המשך</button>
 </div>
-
+</div>
+</div>
 <div id="toast"></div>
-
 <script>
 (()=>{
 'use strict';
