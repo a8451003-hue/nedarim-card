@@ -600,19 +600,21 @@ function addCard(){
 }
 
 // ── Settings modal ──
-document.getElementById('settingsBtn').onclick=()=>document.getElementById('settingsModal').classList.add('show');
-document.getElementById('settingsModal').onclick=e=>{if(e.target===document.getElementById('settingsModal'))document.getElementById('settingsModal').classList.remove('show');};
+function initButtons(){
+  const settingsBtn=document.getElementById('settingsBtn');
+  const settingsModal=document.getElementById('settingsModal');
+  const themeBtn=document.getElementById('themeBtn');
+  if(settingsBtn) settingsBtn.addEventListener('click',()=>settingsModal.classList.add('show'));
+  if(settingsModal) settingsModal.addEventListener('click',e=>{if(e.target===settingsModal)settingsModal.classList.remove('show');});
+  if(themeBtn) themeBtn.addEventListener('click',()=>{
+    const cur=document.documentElement.getAttribute('data-theme');
+    const next=cur==='dark'?'light':'dark';
+    document.documentElement.setAttribute('data-theme',next);
+    themeBtn.textContent=next==='dark'?'🌙':'☀️';
+  });
+  document.getElementById('addBtn').onclick=addCard;
+}
 
-// ── Theme toggle ──
-const themeBtn=document.getElementById('themeBtn');
-themeBtn.onclick=()=>{
-  const cur=document.documentElement.getAttribute('data-theme');
-  const next=cur==='dark'?'light':'dark';
-  document.documentElement.setAttribute('data-theme',next);
-  themeBtn.textContent=next==='dark'?'🌙':'☀️';
-};
-
-document.getElementById('addBtn').onclick=addCard;
 document.getElementById('cardInput').addEventListener('keydown',e=>{if(e.key==='Enter')addCard();});
 document.getElementById('cardInput').addEventListener('input',function(){this.value=fmt(this.value);});
 document.getElementById('checkAllBtn').onclick=async()=>{if(!cards.length){toast('הוסף כרטיסים קודם');return;}toast('מרענן…');for(const c of[...cards])await checkCard(c.id);toast('עודכן הכל ✓');};
@@ -620,6 +622,8 @@ document.getElementById('clearAllBtn').onclick=()=>{
   if(!cards.length)return;
   confirmDouble('נקה הכל','כל הכרטיסים יימחקו לצמיתות',()=>{cards=[];save();render();toast('נוקתה ✓');});
 };
+
+initButtons();
 
 (async()=>{
   const saved=loadSaved();
