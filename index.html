@@ -231,58 +231,8 @@ input::placeholder{color:var(--fnt)}
 }
 </style>
 </head>
-<body><input accept=".txt,text/plain" id="importFile" style="display:none" type="file"/>
-<script>
-(function(){
-  const d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
-  document.documentElement.setAttribute('data-theme',d);
-})();
-
-
-(function(){
-  function dlText(filename, text){
-    const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url; a.download=filename; a.style.display='none'; a.rel='noopener';
-    document.body.appendChild(a); a.click();
-    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1000);
-  }
-  window.exportBackupTxt = function(){
-    if(!Array.isArray(cards) || !cards.length){ toast('אין מספרים לגיבוי'); return; }
-    const text=['Nedarim backup','Created: '+new Date().toLocaleString('he-IL'),'Count: '+cards.length,'',...cards.map((c,i)=>`${i+1}. ${c.number}`)].join('\n');
-    dlText(`backup-${new Date().toISOString().slice(0,10)}.txt`, text);
-    toast('הגיבוי נשמר');
-  };
-  window.importBackupTxt = function(){
-    const inp=document.getElementById('importFile');
-    if(!inp){ toast('חסר רכיב ייבוא'); return; }
-    inp.onchange = async function(){
-      const f = inp.files && inp.files[0];
-      if(!f){ toast('לא נבחר קובץ'); return; }
-      try {
-        const raw = await f.text();
-        const matches = raw.match(/\b\d{8,23}\b/g) || [];
-        const unique = [...new Set(matches)];
-        if(!unique.length){ toast('לא נמצא גיבוי תקין'); return; }
-        const existing = new Set(cards.map(c=>c.number));
-        let added = 0;
-        for(const n of unique){ if(!existing.has(n)){ cards.unshift(makeCard(uid(), n)); added++; } }
-        save(); render();
-        toast(added ? `יובאו ${added} מספרים` : 'אין מספרים חדשים לייבוא');
-      } catch(e) { toast('קריאת הקובץ נכשלה'); }
-    };
-    inp.click();
-  };
-  function bind(){
-    const eb=document.getElementById('exportBtn');
-    const ib=document.getElementById('importBtn');
-    if(eb) eb.onclick=window.exportBackupTxt;
-    if(ib) ib.onclick=window.importBackupTxt;
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind); else bind();
-})();
-</script>
+<body><input accept=".txt,text/plain" id="importFile" style="display:none" type="file"/><div id="backupDebug" style="display:none;position:fixed;bottom:12px;left:12px;right:12px;z-index:2000;background:#fff;color:#000;padding:8px 10px;border:1px solid #999;border-radius:8px;font-size:12px;white-space:pre-wrap"></div>
+<script>const d='light'; document.documentElement.setAttribute('data-theme', d)</script>
 <div class="app">
 <!-- Topbar -->
 <div class="topbar">
@@ -307,7 +257,7 @@ input::placeholder{color:var(--fnt)}
 </div>
 <div class="tbar">
 <button class="btn btn-o btn-sm" id="checkAllBtn">🔄 רענן הכל</button>
-<button class="btn btn-o btn-sm" id="importBtn" onclick="importBackupTxt()">📥 ייבוא TXT</button><button class="btn btn-o btn-sm" id="exportBtn" onclick="exportBackupTxt()">💾 גיבוי TXT</button><button class="btn btn-d btn-sm" id="clearAllBtn">🗑 נקה הכל</button>
+<button class="btn btn-o btn-sm" id="importBtn" type="button">📥 ייבוא TXT</button><button class="btn btn-o btn-sm" id="exportBtn" type="button">💾 גיבוי TXT</button><button class="btn btn-d btn-sm" id="clearAllBtn">🗑 נקה הכל</button>
 </div>
 </div>
 <!-- Sumbar -->
@@ -618,6 +568,54 @@ document.getElementById('clearAllBtn').onclick=()=>{
   for(const c of cards)await checkCard(c.id);
 })();
 
+})();
+
+
+const BACKUP_FIX_V3 = true;
+(function(){
+  function dbg(msg){ const el=document.getElementById('backupDebug'); if(el){ el.style.display='block'; el.textContent=msg; } }
+  function download(filename, text){
+    const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1000);
+  }
+  window.exportBackupTxt = function(){
+    try{
+      const count = Array.isArray(cards) ? cards.length : 0;
+      if(!count){ toast('אין מספרים לגיבוי'); return; }
+      const text = ['Nedarim backup','Created: ' + new Date().toLocaleString('he-IL'),'Count: ' + count,'',...cards.map((c,i)=>`${i+1}. ${c.number}`)].join('\n');
+      dbg('export: ' + count + ' cards');
+      download(`backup-${new Date().toISOString().slice(0,10)}.txt`, text);
+      toast('הגיבוי נשמר');
+    }catch(e){ dbg('export error: ' + e); toast('הייצוא נכשל'); }
+  };
+  window.importBackupTxt = function(){
+    try{
+      const sample = prompt('הדבק את תוכן קובץ הגיבוי TXT');
+      if(sample == null) return;
+      const nums = [...new Set((sample.match(/\b\d{8,23}\b/g) || []))];
+      if(!nums.length){ dbg('import: no numbers'); toast('לא נמצא גיבוי תקין'); return; }
+      const existing = new Set(cards.map(c=>c.number));
+      let added = 0;
+      for(const n of nums){ if(!existing.has(n)){ cards.unshift(makeCard(uid(), n)); added++; } }
+      save(); render();
+      dbg('import added: ' + added);
+      toast(added ? `יובאו ${added} מספרים` : 'אין מספרים חדשים לייבוא');
+    }catch(e){ dbg('import error: ' + e); toast('הייבוא נכשל'); }
+  };
+  function bind(){
+    const eb=document.getElementById('exportBtn');
+    const ib=document.getElementById('importBtn');
+    if(eb) eb.onclick = window.exportBackupTxt;
+    if(ib) ib.onclick = window.importBackupTxt;
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind); else bind();
 })();
 </script>
 </body>
