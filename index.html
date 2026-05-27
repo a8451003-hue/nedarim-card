@@ -231,7 +231,7 @@ input::placeholder{color:var(--fnt)}
 }
 </style>
 </head>
-<body>
+<body><input accept=".txt,text/plain" id="importFile" style="display:none" type="file"/>
 <script>
 (function(){
   const d=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
@@ -239,70 +239,49 @@ input::placeholder{color:var(--fnt)}
 })();
 
 
-window.__backupBound = true;
-function exportBackupTxt(){
-  if (!cards || !cards.length) { toast('אין מספרים לגיבוי'); return; }
-  const lines = [
-    'Nedarim backup',
-    'Created: ' + new Date().toLocaleString('he-IL'),
-    'Count: ' + cards.length,
-    '',
-    ...cards.map((c, i) => `${i + 1}. ${c.number}`)
-  ];
-  const text = lines.join('\n');
-  const filename = `backup-${new Date().toISOString().slice(0,10)}.txt`;
-  const doDownload = () => {
-    const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename; a.style.display='none';
+(function(){
+  function dlText(filename, text){
+    const blob=new Blob([text],{type:'text/plain;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=filename; a.style.display='none'; a.rel='noopener';
     document.body.appendChild(a); a.click();
-    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1000);
+  }
+  window.exportBackupTxt = function(){
+    if(!Array.isArray(cards) || !cards.length){ toast('אין מספרים לגיבוי'); return; }
+    const text=['Nedarim backup','Created: '+new Date().toLocaleString('he-IL'),'Count: '+cards.length,'',...cards.map((c,i)=>`${i+1}. ${c.number}`)].join('\n');
+    dlText(`backup-${new Date().toISOString().slice(0,10)}.txt`, text);
+    toast('הגיבוי נשמר');
   };
-  (async () => {
-    try {
-      if (window.showSaveFilePicker) {
-        const handle = await window.showSaveFilePicker({suggestedName: filename, types:[{description:'Text Files', accept:{'text/plain':['.txt']}}]});
-        const writable = await handle.createWritable();
-        await writable.write(text);
-        await writable.close();
-      } else doDownload();
-      toast('הגיבוי נשמר');
-    } catch(e) {
-      if (String(e && e.name) !== 'AbortError') toast('הייצוא נכשל');
-    }
-  })();
-}
-function importBackupTxt(){
-  const inp = document.getElementById('importFile');
-  if (!inp) { toast('חסר רכיב ייבוא'); return; }
-  inp.value = '';
-  inp.onchange = async () => {
-    const file = inp.files && inp.files[0];
-    if (!file) return;
-    try {
-      const raw = await file.text();
-      const nums = [...raw.matchAll(/\b\d{8,23}\b/g)].map(m => m[0]);
-      const unique = [...new Set(nums)];
-      if (!unique.length) { toast('לא נמצא גיבוי תקין'); return; }
-      const existing = new Set(cards.map(c => c.number));
-      let added = 0;
-      for (const n of unique) {
-        if (!existing.has(n)) { cards.unshift(makeCard(uid(), n)); added++; }
-      }
-      save(); render();
-      toast(added ? `יובאו ${added} מספרים` : 'אין מספרים חדשים לייבוא');
-    } catch (e) { toast('קריאת הקובץ נכשלה'); }
+  window.importBackupTxt = function(){
+    const inp=document.getElementById('importFile');
+    if(!inp){ toast('חסר רכיב ייבוא'); return; }
+    inp.onchange = async function(){
+      const f = inp.files && inp.files[0];
+      if(!f){ toast('לא נבחר קובץ'); return; }
+      try {
+        const raw = await f.text();
+        const matches = raw.match(/\b\d{8,23}\b/g) || [];
+        const unique = [...new Set(matches)];
+        if(!unique.length){ toast('לא נמצא גיבוי תקין'); return; }
+        const existing = new Set(cards.map(c=>c.number));
+        let added = 0;
+        for(const n of unique){ if(!existing.has(n)){ cards.unshift(makeCard(uid(), n)); added++; } }
+        save(); render();
+        toast(added ? `יובאו ${added} מספרים` : 'אין מספרים חדשים לייבוא');
+      } catch(e) { toast('קריאת הקובץ נכשלה'); }
+    };
+    inp.click();
   };
-  inp.click();
-}
-const bindBackupBtns = () => {
-  const eb = document.getElementById('exportBtn');
-  const ib = document.getElementById('importBtn');
-  if (eb) eb.onclick = exportBackupTxt;
-  if (ib) ib.onclick = importBackupTxt;
-};
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindBackupBtns); else bindBackupBtns();
+  function bind(){
+    const eb=document.getElementById('exportBtn');
+    const ib=document.getElementById('importBtn');
+    if(eb) eb.onclick=window.exportBackupTxt;
+    if(ib) ib.onclick=window.importBackupTxt;
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind); else bind();
+})();
 </script>
 <div class="app">
 <!-- Topbar -->
@@ -328,7 +307,7 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 </div>
 <div class="tbar">
 <button class="btn btn-o btn-sm" id="checkAllBtn">🔄 רענן הכל</button>
-<button class="btn btn-o btn-sm" id="importBtn">📥 ייבוא TXT</button><button class="btn btn-o btn-sm" id="exportBtn">💾 גיבוי TXT</button><button class="btn btn-d btn-sm" id="clearAllBtn">🗑 נקה הכל</button>
+<button class="btn btn-o btn-sm" id="importBtn" onclick="importBackupTxt()">📥 ייבוא TXT</button><button class="btn btn-o btn-sm" id="exportBtn" onclick="exportBackupTxt()">💾 גיבוי TXT</button><button class="btn btn-d btn-sm" id="clearAllBtn">🗑 נקה הכל</button>
 </div>
 </div>
 <!-- Sumbar -->
@@ -348,7 +327,7 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 </div>
 </div>
 <!-- Settings Modal -->
-<input accept=".txt,text/plain" id="importFile" style="display:none" type="file"/><div class="modal-bg" id="settingsModal">
+<div class="modal-bg" id="settingsModal">
 <div class="modal">
 <div class="modal-title">⚙️ הגדרות</div>
 <div class="modal-section">
