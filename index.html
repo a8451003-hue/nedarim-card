@@ -1,621 +1,358 @@
-<!DOCTYPE html>
-
-<html dir="rtl" lang="he">
+<!doctype html>
+<html lang="he" dir="rtl">
 <head>
-<link href="/nedarim-card/manifest.json" rel="manifest"/>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
-<meta content="#6c47ff" name="theme-color"/>
-<title>nedarim-card-balance-app</title>
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ניהול כרטיסים</title>
 <style>
-:root{
-  --text-xs:clamp(.75rem,.7rem + .25vw,.875rem);
-  --text-sm:clamp(.875rem,.8rem + .35vw,1rem);
-  --text-base:clamp(1rem,.95rem + .25vw,1.125rem);
-  --text-lg:clamp(1.125rem,1rem + .75vw,1.5rem);
-  --text-xl:clamp(1.5rem,1.2rem + 1.25vw,2.25rem);
-  --sp1:.25rem;--sp2:.5rem;--sp3:.75rem;--sp4:1rem;--sp5:1.25rem;--sp6:1.5rem;--sp8:2rem;--sp10:2.5rem;--sp12:3rem;
-  --r-sm:.375rem;--r-md:.5rem;--r-lg:.75rem;--r-xl:1rem;--r-2xl:1.5rem;--r-full:9999px;
-  --ease:200ms cubic-bezier(.16,1,.3,1);
-}
-/* ── Dark-first palette ── */
-:root,[data-theme="dark"]{
-  --bg:#0d0c14;
-  --sur:#13111f;
-  --sur2:#1a1828;
-  --sur3:#222035;
-  --sur4:#2c2a42;
-  --bor:rgba(255,255,255,.09);
-  --div:rgba(255,255,255,.05);
-  --tx:#e8e6f0;
-  --mut:#8b87a8;
-  --fnt:#44415a;
-  --acc:#6c47ff;
-  --acc2:#a855f7;
-  --acchi:rgba(108,71,255,.18);
-  --accglow:rgba(108,71,255,.35);
-  --ok:#22c55e;--okhi:rgba(34,197,94,.14);
-  --wn:#f59e0b;--wnhi:rgba(245,158,11,.12);
-  --er:#f43f5e;--erhi:rgba(244,63,94,.12);
-  --sh1:0 1px 4px rgba(0,0,0,.4);
-  --sh2:0 4px 24px rgba(0,0,0,.5);
-  --sh3:0 12px 48px rgba(0,0,0,.6);
-  --glow:0 0 24px var(--accglow);
-}
-[data-theme="light"]{
-  --bg:#f0eef8;
-  --sur:#faf9ff;
-  --sur2:#ffffff;
-  --sur3:#ece9f7;
-  --sur4:#e0dcf2;
-  --bor:rgba(60,40,120,.1);
-  --div:rgba(60,40,120,.06);
-  --tx:#1a1630;
-  --mut:#6b6490;
-  --fnt:#b0accc;
-  --acc:#6c47ff;
-  --acc2:#a855f7;
-  --acchi:rgba(108,71,255,.1);
-  --accglow:rgba(108,71,255,.2);
-  --ok:#16a34a;--okhi:rgba(22,163,74,.1);
-  --wn:#d97706;--wnhi:rgba(217,119,6,.1);
-  --er:#e11d48;--erhi:rgba(225,29,72,.1);
-  --sh1:0 1px 4px rgba(80,60,160,.08);
-  --sh2:0 4px 24px rgba(80,60,160,.12);
-  --sh3:0 12px 48px rgba(80,60,160,.18);
-  --glow:0 0 20px var(--accglow);
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:none;text-size-adjust:none;scroll-behavior:smooth}
-body{
-  min-height:100dvh;font-family:'Assistant',sans-serif;font-size:var(--text-base);
-  color:var(--tx);background:var(--bg);line-height:1.55;
-  background-image:
-    radial-gradient(ellipse 60% 40% at 80% -10%, color-mix(in srgb,var(--acc) 14%,transparent), transparent 60%),
-    radial-gradient(ellipse 40% 30% at 10% 90%, color-mix(in srgb,var(--acc2) 8%,transparent), transparent 50%);
-}
-button,input{font:inherit;color:inherit}
-button{cursor:pointer;border:none;background:none}
-input{width:100%;border:1.5px solid var(--bor);background:var(--sur2);padding:var(--sp3) var(--sp4);border-radius:var(--r-lg);outline:none;color:var(--tx)}
-input:focus{border-color:var(--acc);box-shadow:0 0 0 4px var(--acchi)}
-input::placeholder{color:var(--fnt)}
-*{transition:color var(--ease),background-color var(--ease),border-color var(--ease),box-shadow var(--ease),transform var(--ease),opacity var(--ease)}
-
-.app{max-width:720px;margin:0 auto;padding:var(--sp4) var(--sp4) calc(var(--sp12) + env(safe-area-inset-bottom))}
-
-/* ── Topbar ── */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:var(--sp3) 0 var(--sp5)}
-.brand{display:flex;align-items:center;gap:var(--sp3)}
-.brand-logo{width:36px;height:36px;border-radius:var(--r-lg);background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;font-size:1.1rem;box-shadow:var(--glow);flex-shrink:0}
-.brand-text{font-weight:800;font-size:var(--text-lg);background:linear-gradient(100deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.brand-sub{font-size:var(--text-xs);color:var(--mut);font-weight:400;margin-top:1px;-webkit-text-fill-color:var(--mut)}
-.topbar-btns{display:flex;gap:var(--sp2)}
-.icobtn{min-width:40px;min-height:40px;display:grid;place-items:center;border-radius:var(--r-lg);background:var(--sur);border:1.5px solid var(--bor);box-shadow:var(--sh1);font-size:1rem}
-.icobtn:hover{background:var(--sur3);box-shadow:var(--sh2)}
-
-/* ── Add panel ── */
-.add-panel{background:var(--sur);border:1.5px solid var(--bor);border-radius:var(--r-2xl);box-shadow:var(--sh2);padding:var(--sp5);position:relative;overflow:hidden}
-.add-panel::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 6%,transparent),transparent 60%);pointer-events:none}
-.flbl{display:block;font-size:var(--text-sm);font-weight:700;color:var(--mut);margin-bottom:var(--sp2)}
-.irow{display:grid;grid-template-columns:1fr auto;gap:var(--sp3);align-items:center}
-.btn{min-height:48px;padding:var(--sp2) var(--sp5);border-radius:var(--r-lg);font-weight:700;font-size:var(--text-sm);display:inline-flex;align-items:center;justify-content:center;gap:var(--sp2);white-space:nowrap}
-.btn-p{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;box-shadow:var(--glow)}
-.btn-p:hover{transform:translateY(-1px);box-shadow:0 0 32px var(--accglow)}
-.btn-p:active{transform:none}
-.btn-o{background:transparent;color:var(--tx);border:1.5px solid var(--bor)}
-.btn-o:hover{background:var(--sur3)}
-.btn-d{background:transparent;color:var(--er);border:1.5px solid color-mix(in srgb,var(--er) 28%,transparent)}
-.btn-d:hover{background:var(--erhi)}
-.btn-sm{min-height:34px;padding:var(--sp1) var(--sp3);font-size:var(--text-xs)}
-.tbar{display:flex;gap:var(--sp2);margin-top:var(--sp3);flex-wrap:wrap}
-
-/* ── Sumbar ── */
-.sumbar{
-  display:flex;gap:var(--sp4);padding:var(--sp4) var(--sp5);
-  background:linear-gradient(120deg,color-mix(in srgb,var(--acc) 12%,var(--sur)),color-mix(in srgb,var(--acc2) 8%,var(--sur)));
-  border:1.5px solid color-mix(in srgb,var(--acc) 30%,transparent);
-  border-radius:var(--r-2xl);margin-top:var(--sp4);align-items:center;flex-wrap:wrap;
-  box-shadow:var(--glow);
-}
-.sum-val{font-size:var(--text-lg);font-weight:800;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-variant-numeric:tabular-nums}
-.sum-lbl{font-size:var(--text-xs);color:var(--mut);-webkit-text-fill-color:var(--mut)}
-.sum-sep{width:1px;height:34px;background:var(--bor);flex-shrink:0}
-
-.sec-title{font-size:var(--text-xs);font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin:var(--sp6) 0 var(--sp3)}
-.clist{display:grid;gap:var(--sp4)}
-
-/* ── Card ── */
-.crow{
-  background:var(--sur);border:1.5px solid var(--bor);
-  border-radius:var(--r-2xl);box-shadow:var(--sh1);overflow:hidden;
-  position:relative;
-}
-.crow::before{
-  content:'';position:absolute;top:0;right:0;width:120px;height:120px;
-  background:radial-gradient(circle at top right,color-mix(in srgb,var(--acc) 8%,transparent),transparent 70%);
-  pointer-events:none;
-}
-.crow:hover{box-shadow:var(--sh2);border-color:color-mix(in srgb,var(--acc) 25%,var(--bor))}
-.crow.balance-zero::before{background:radial-gradient(circle at top right,color-mix(in srgb,var(--wn) 6%,transparent),transparent 70%)}
-
-.ctop{display:flex;align-items:center;justify-content:space-between;gap:var(--sp3);padding:var(--sp4)}
-.cnum{font-size:var(--text-base);font-weight:700;direction:ltr;unicode-bidi:plaintext;font-variant-numeric:tabular-nums;letter-spacing:.06em;color:var(--tx)}
-.csub{font-size:var(--text-xs);margin-top:3px;color:var(--acc);font-weight:600}
-.csub.m{color:var(--mut);font-weight:400}
-.ctop-right{display:flex;align-items:center;gap:var(--sp2);flex-wrap:wrap;justify-content:flex-end}
-.bdg{display:inline-flex;align-items:center;gap:4px;border-radius:var(--r-full);padding:4px 12px;font-size:var(--text-sm);font-weight:800;font-variant-numeric:tabular-nums;flex-shrink:0;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bdg-idle{background:var(--sur3);color:var(--fnt)}
-.bdg-chk{background:var(--acchi);color:var(--acc);animation:pulse 1.1s ease-in-out infinite}
-.bdg-ok{background:var(--okhi);color:var(--ok)}
-.bdg-zero{background:var(--wnhi);color:var(--wn)}
-.bdg-err{background:var(--erhi);color:var(--er);font-size:var(--text-xs)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.ibtn{min-width:38px;min-height:38px;padding:0;border-radius:var(--r-md);background:var(--sur3);border:1.5px solid var(--bor);display:grid;place-items:center;font-size:.95rem}
-.ibtn:hover{background:var(--sur4);box-shadow:var(--sh1)}
-
-/* ── Action buttons ── */
-.cactions{display:flex;gap:var(--sp2);padding:0 var(--sp4) var(--sp4);flex-wrap:wrap}
-.abtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;flex:1;min-width:72px;min-height:68px;border-radius:var(--r-xl);background:var(--sur2);border:1.5px solid var(--bor);cursor:pointer;padding:var(--sp2)}
-.abtn:hover{background:var(--sur3);box-shadow:var(--sh1)}
-.abtn:active{transform:scale(.96)}
-.abtn-ico{font-size:1.5rem;line-height:1}
-.abtn-lbl{font-size:var(--text-xs);font-weight:700;color:var(--mut);text-align:center}
-.abtn.pri{background:color-mix(in srgb,var(--acc) 12%,var(--sur2));border-color:color-mix(in srgb,var(--acc) 30%,transparent)}
-.abtn.pri .abtn-lbl{color:var(--acc)}
-.abtn.spk{background:color-mix(in srgb,var(--ok) 10%,var(--sur2));border-color:color-mix(in srgb,var(--ok) 25%,transparent)}
-.abtn.spk .abtn-lbl{color:var(--ok)}
-
-/* ── Reveal panel ── */
-.reveal-panel{background:color-mix(in srgb,var(--acc) 8%,var(--sur));border-top:1.5px solid var(--div);padding:var(--sp4)}
-.reveal-label{font-size:var(--text-xs);font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--sp2)}
-.reveal-num{font-size:clamp(1.4rem,5vw,2rem);font-weight:800;direction:ltr;unicode-bidi:plaintext;letter-spacing:.12em;font-variant-numeric:tabular-nums;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;word-break:break-all;margin-bottom:var(--sp3)}
-.reveal-btns{display:flex;gap:var(--sp2);flex-wrap:wrap}
-
-/* ── Tlushim ── */
-.tlush-section{border-top:1.5px solid var(--div);padding:var(--sp4)}
-.det-title{font-size:var(--text-xs);font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.06em;margin-bottom:var(--sp3)}
-.tgrid{display:grid;gap:var(--sp2)}
-.trow{display:flex;align-items:center;justify-content:space-between;gap:var(--sp3);background:var(--sur2);border:1.5px solid var(--bor);border-radius:var(--r-lg);padding:var(--sp3)}
-.tname{font-size:var(--text-sm);font-weight:600}
-.texp{font-size:var(--text-xs);color:var(--mut);margin-top:2px}
-.tamt{font-size:var(--text-base);font-weight:800;color:var(--ok);font-variant-numeric:tabular-nums;flex-shrink:0}
-.tamt.units{color:var(--acc)}
-
-/* ── Mימושים (redemptions) ── */
-.redem-section{border-top:1.5px solid var(--div);padding:var(--sp4)}
-.redem-row{display:flex;align-items:center;justify-content:space-between;gap:var(--sp3);background:var(--sur2);border:1.5px solid var(--bor);border-radius:var(--r-lg);padding:var(--sp3);margin-bottom:var(--sp2)}
-.redem-where{font-size:var(--text-sm);font-weight:700}
-.redem-when{font-size:var(--text-xs);color:var(--mut);margin-top:2px}
-.redem-amt{font-size:var(--text-base);font-weight:800;color:var(--er);font-variant-numeric:tabular-nums;flex-shrink:0;white-space:nowrap}
-.toggle-btn{font-size:var(--text-xs);font-weight:700;color:var(--acc);background:none;border:none;cursor:pointer;padding:var(--sp1) 0;display:flex;align-items:center;gap:4px;margin-top:var(--sp2)}
-.toggle-btn:hover{opacity:.75}
-
-/* ── Settings modal ── */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center;padding:var(--sp4);z-index:500}
-.modal-bg.show{display:flex}
-.modal{background:var(--sur);border:1.5px solid var(--bor);border-radius:var(--r-2xl) var(--r-2xl) var(--r-lg) var(--r-lg);width:100%;max-width:480px;box-shadow:var(--sh3);padding:var(--sp6);max-height:80dvh;overflow-y:auto}
-.modal-title{font-size:var(--text-lg);font-weight:800;margin-bottom:var(--sp5);display:flex;align-items:center;gap:var(--sp3)}
-.modal-section{margin-bottom:var(--sp5)}
-.modal-section-title{font-size:var(--text-xs);font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.07em;margin-bottom:var(--sp3)}
-.rate-bar{display:flex;gap:var(--sp2);flex-wrap:wrap}
-.rate-btn{min-height:40px;padding:0 var(--sp4);border-radius:var(--r-full);font-size:var(--text-sm);font-weight:700;background:var(--sur3);border:1.5px solid var(--bor);cursor:pointer;color:var(--mut)}
-.rate-btn.active{background:var(--acchi);border-color:color-mix(in srgb,var(--acc) 40%,transparent);color:var(--acc)}
-.rate-btn:hover{background:var(--sur4)}
-.modal-close{margin-top:var(--sp4);width:100%}
-
-/* ── Dialog ── */
-.dlg-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:var(--sp4);z-index:1000}
-.dlg-bg.show{display:flex}
-.dlg{background:var(--sur);border:1.5px solid var(--bor);border-radius:var(--r-2xl);padding:var(--sp6);max-width:360px;width:100%;box-shadow:var(--sh3)}
-.dlg h3{font-size:var(--text-lg);font-weight:800;margin-bottom:var(--sp3)}
-.dlg p{color:var(--mut);font-size:var(--text-sm);margin-bottom:var(--sp5)}
-.dlg-btns{display:flex;gap:var(--sp3);justify-content:flex-end}
-
-.empty{text-align:center;padding:var(--sp12) var(--sp6);color:var(--mut)}
-.empty svg{margin:0 auto var(--sp4);opacity:.4}
-.empty h3{color:var(--tx);margin-bottom:var(--sp2);font-size:var(--text-lg)}
-.empty p{font-size:var(--text-sm)}
-
-#toast{position:fixed;bottom:calc(var(--sp6) + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(14px);background:var(--sur3);color:var(--tx);border:1.5px solid var(--bor);border-radius:var(--r-full);padding:var(--sp3) var(--sp5);font-size:var(--text-sm);font-weight:700;box-shadow:var(--sh3);opacity:0;pointer-events:none;z-index:999;white-space:nowrap;max-width:92vw;text-align:center}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-@media(max-width:430px){
-  .irow{grid-template-columns:1fr}
-  .ctop{flex-direction:column;align-items:flex-start}
-  .ctop-right{justify-content:flex-start}
-  .btn{min-height:52px}
-  .abtn{min-height:60px}
-}
+:root{--bg:#f6f7fb;--card:#fff;--txt:#111827;--mut:#6b7280;--pri:#6c47ff;--pri2:#8b6dff;--bd:#d7dbe7;--sh:0 8px 28px rgba(0,0,0,.08)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,Segoe UI,Arial}
+.app{max-width:860px;margin:0 auto;padding:16px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}
+.brand{font-weight:800;font-size:22px}
+.sub{color:var(--mut);font-size:13px}
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:18px;box-shadow:var(--sh);padding:14px}
+.row{display:grid;grid-template-columns:1fr auto;gap:10px}
+input,textarea{width:100%;border:1px solid var(--bd);border-radius:14px;padding:13px 12px;font:inherit;background:#fff;color:var(--txt)}
+input:focus,textarea:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 4px rgba(108,71,255,.12)}
+button{border:0;border-radius:14px;padding:12px 14px;font:inherit;font-weight:700;cursor:pointer;transition:transform .1s}
+button:active{transform:scale(.97)}
+.pri{background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff}
+.sec{background:#eef1ff;color:#24134f}
+.ghost{background:#f3f4f6;color:#111827}
+.danger{background:#fee2e2;color:#991b1b}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.chip{font-size:12px;color:var(--mut);background:#f1f5f9;border:1px solid var(--bd);border-radius:999px;padding:6px 10px}
+.summary{display:none;margin-top:14px;padding:14px;gap:14px;flex-wrap:wrap;background:linear-gradient(135deg,#fff,#f6f0ff);border:1px solid var(--bd);border-radius:14px}
+.sum-val{font-size:20px;font-weight:800}
+.sum-lbl{font-size:12px;color:var(--mut)}
+.list{display:grid;gap:12px;margin-top:16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:18px;box-shadow:var(--sh);padding:14px}
+.card-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.num{font-weight:800;direction:ltr;unicode-bidi:plaintext;font-variant-numeric:tabular-nums;letter-spacing:.04em;font-size:16px}
+.lbl{color:var(--mut);font-size:12px;margin-top:2px}
+.badge{font-size:12px;font-weight:800;border-radius:999px;padding:6px 12px;white-space:nowrap}
+.s-idle{background:#f3f4f6;color:#475467}
+.s-checking{background:#e9e7ff;color:#5b43d6}
+.s-ok{background:#dcfce7;color:#166534}
+.s-zero{background:#fef3c7;color:#a16207}
+.s-err{background:#fee2e2;color:#991b1b}
+.card-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.mini{padding:9px 10px;font-size:12px;border-radius:12px}
+.reveal-box{margin-top:10px;background:#fafafa;border:1px dashed var(--bd);border-radius:14px;padding:10px;font-size:13px}
+.hidden{display:none}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 18px;border-radius:999px;box-shadow:var(--sh);opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;text-align:center;z-index:999}
+#toast.show{opacity:1}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:14px;z-index:1000}
+.overlay.show{display:flex}
+.modal{width:100%;max-width:520px;background:var(--card);border-radius:20px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal h3{margin:0 0 12px;font-size:18px}
+@media(max-width:600px){.row{grid-template-columns:1fr}.top{flex-direction:column;align-items:flex-start}.summary{display:flex}}
 </style>
 </head>
-<body><input accept=".txt,text/plain" id="importFile" style="display:none" type="file"/><div id="backupDebug" style="display:none;position:fixed;bottom:12px;left:12px;right:12px;z-index:2000;background:#fff;color:#000;padding:8px 10px;border:1px solid #999;border-radius:8px;font-size:12px;white-space:pre-wrap"></div>
-<script>const d='light'; document.documentElement.setAttribute('data-theme', d)</script>
+<body>
 <div class="app">
-<!-- Topbar -->
-<div class="topbar">
-<div class="brand">
-<div class="brand-logo">💳</div>
-<div>
-<div class="brand-text">נדרים+</div>
-<div class="brand-sub">כרטיסי מתנה</div>
+  <div class="top">
+    <div>
+      <div class="brand">ניהול כרטיסים</div>
+      <div class="sub">שמירה מקומית · בדיקה אונליין · גיבוי וייבוא</div>
+    </div>
+    <button class="ghost" id="themeBtn">☼ / ☾</button>
+  </div>
+
+  <div class="panel">
+    <div class="row">
+      <input id="cardInput" type="tel" inputmode="numeric" maxlength="23" placeholder="הזן מספר כרטיס" autocomplete="off">
+      <button class="pri" id="addBtn">+ הוסף</button>
+    </div>
+    <div class="chips">
+      <span class="chip">מיון לפי יתרה</span>
+      <span class="chip">גיבוי וייבוא TXT</span>
+      <span class="chip">שמירה מקומית</span>
+    </div>
+    <div class="btns">
+      <button class="sec" id="checkAllBtn">רענן הכל</button>
+      <button class="sec" id="exportBtn">⬇ גיבוי TXT</button>
+      <button class="sec" id="importBtn">⬆ ייבוא TXT</button>
+      <button class="ghost" id="sortBtn">↕ סדר לפי יתרה</button>
+    </div>
+    <div class="summary" id="summary">
+      <div><div class="sum-val" id="sumCount">0</div><div class="sum-lbl">כרטיסים</div></div>
+      <div><div class="sum-val" id="sumLoaded">0</div><div class="sum-lbl">נבדקו</div></div>
+      <div><div class="sum-val" id="sumTotal">0 ₪</div><div class="sum-lbl">סה"כ יתרה</div></div>
+    </div>
+  </div>
+
+  <div id="list" class="list"></div>
+  <div id="emptyMsg" class="panel" style="margin-top:16px;text-align:center;color:var(--mut);padding:28px">אין כרטיסים עדיין — הוסף מספר כרטיס למעלה</div>
 </div>
-</div>
-<div class="topbar-btns">
-<button class="icobtn" id="settingsBtn" title="הגדרות">⚙️</button>
-<button aria-label="החלפת ערכת נושא" class="icobtn" id="themeBtn" title="עבור מצב">🌙</button>
-</div>
-</div>
-<!-- Add card -->
-<div class="add-panel">
-<label class="flbl" for="cardInput">מספר כרטיס</label>
-<div class="irow">
-<input autocomplete="off" id="cardInput" inputmode="numeric" maxlength="23" placeholder="הזן מספר כרטיס…" type="tel"/>
-<button class="btn btn-p" id="addBtn">+ הוסף</button>
-</div>
-<div class="tbar">
-<button class="btn btn-o btn-sm" id="checkAllBtn">🔄 רענן הכל</button>
-<button class="btn btn-o btn-sm" id="importBtn" type="button">📥 ייבוא TXT</button><button class="btn btn-o btn-sm" id="exportBtn" type="button">💾 גיבוי TXT</button><button class="btn btn-d btn-sm" id="clearAllBtn">🗑 נקה הכל</button>
-</div>
-</div>
-<!-- Sumbar -->
-<div class="sumbar" id="sumbar" style="display:none">
-<div><div class="sum-val" id="sumTotal">0 ₪</div><div class="sum-lbl">סה"כ יתרה</div></div>
-<div class="sum-sep"></div>
-<div><div class="sum-val" id="sumCount">0</div><div class="sum-lbl">כרטיסים</div></div>
-<div class="sum-sep"></div>
-<div><div class="sum-val" id="sumDone">0</div><div class="sum-lbl">נבדקו</div></div>
-</div>
-<div class="sec-title" id="secTitle" style="display:none">הכרטיסים שלי</div>
-<div class="clist" id="clist"></div>
-<div class="empty" id="emptyState">
-<svg fill="none" height="56" viewbox="0 0 56 56" width="56"><rect height="28" rx="6" stroke="currentColor" stroke-width="2.5" width="40" x="8" y="16"></rect><path d="M8 24h40" stroke="currentColor" stroke-width="2.5"></path><rect fill="currentColor" height="4" rx="2" width="10" x="14" y="31"></rect></svg>
-<h3>אין כרטיסים עדיין</h3>
-<p>הזן מספר כרטיס נדרים+ להוספה</p>
-</div>
-</div>
-<!-- Settings Modal -->
-<div class="modal-bg" id="settingsModal">
-<div class="modal">
-<div class="modal-title">⚙️ הגדרות</div>
-<div class="modal-section">
-<div class="modal-section-title">מהירות הקראה</div>
-<div class="rate-bar">
-<button class="rate-btn" data-rate="0.7" onclick="window.setRate(0.7,this)">🐢 איטי</button>
-<button class="rate-btn active" data-rate="1.0" onclick="window.setRate(1.0,this)">▶ רגיל</button>
-<button class="rate-btn" data-rate="1.3" onclick="window.setRate(1.3,this)">⚡ מהיר</button>
-<button class="rate-btn" data-rate="1.6" onclick="window.setRate(1.6,this)">🚀 מהיר מאוד</button>
-</div>
-</div>
-<div class="modal-section">
-<div class="modal-section-title">קולות</div>
-<button class="btn btn-o" onclick="window.showVoices()">🎙 בדוק קולות זמינים</button>
-</div>
-<button class="btn btn-o modal-close" onclick="document.getElementById('settingsModal').classList.remove('show')">סגור</button>
-</div>
-</div>
-<!-- Dialog -->
-<div class="dlg-bg" id="dlgBg">
-<div class="dlg">
-<h3 id="dlgTitle"></h3>
-<p id="dlgText"></p>
-<div class="dlg-btns">
-<button class="btn btn-o" id="dlgCancel">ביטול</button>
-<button class="btn btn-p" id="dlgOk">המשך</button>
-</div>
-</div>
-</div>
+
 <div id="toast"></div>
+
+<div class="overlay" id="importOverlay">
+  <div class="modal">
+    <h3>ייבוא גיבוי TXT</h3>
+    <div style="color:var(--mut);font-size:13px;margin-bottom:12px">בחר קובץ TXT שמור, או הדבק ישירות כאן.</div>
+    <input id="importFile" type="file" accept=".txt,text/plain" style="margin-bottom:10px">
+    <textarea id="importText" rows="7" placeholder="הדבק תוכן גיבוי כאן"></textarea>
+    <div class="btns" style="justify-content:flex-end;margin-top:14px">
+      <button class="ghost" id="importCancel">ביטול</button>
+      <button class="pri" id="importDo">ייבא</button>
+    </div>
+  </div>
+</div>
+
 <script>
-(()=>{
+(function(){
 'use strict';
-const SKEY='ndc_cards_v2';
-const HEB_DIGITS={'0':'אפס','1':'אחת','2':'שתיים','3':'שלוש','4':'ארבע','5':'חמש','6':'שש','7':'שבע','8':'שמונה','9':'תשע'};
-let cards=[];
-let speakRate=1.0;
+var KEY='nedarim-cards-v1';
+var cards=[];
+var isDark=false;
 
-const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-const dig=s=>String(s).replace(/\D/g,'');
-const fmt=s=>{const d=dig(s);if(d.length<=4)return d;if(d.length<=8)return d.slice(0,4)+'-'+d.slice(4);if(d.length<=12)return d.slice(0,4)+'-'+d.slice(4,8)+'-'+d.slice(8);return d.slice(0,4)+'-'+d.slice(4,8)+'-'+d.slice(8,12)+'-'+d.slice(12)};
-const mask=s=>{const d=dig(s);if(d.length<8)return fmt(s);return '****-****-'+d.slice(-4).split('').join('-')};
-const uid=()=>Math.random().toString(36).slice(2,10);
-const parseAmt=s=>{if(!s)return 0;const m=String(s).match(/[\d.]+/);return m?parseFloat(m[0]):0;};
+function uid(){return Math.random().toString(36).slice(2,10)}
 
-function save(){try{localStorage.setItem(SKEY,JSON.stringify(cards.map(c=>({id:c.id,number:c.number}))));}catch(e){}}
-function loadSaved(){try{const r=localStorage.getItem(SKEY);return r?JSON.parse(r):[];}catch(e){return[];}}
-function makeCard(id,number){return{id,number,status:'idle',balance:null,kupaName:'',tlushim:[],errorMsg:'',revealed:false};}
-
-// ── Toast ──
-let toastT;
-function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2800);}
-
-// ── Dialog ──
-let dlgFinalCb=null,dlgStep=0;
-const dlgBg=document.getElementById('dlgBg');
-const dlgTitle=document.getElementById('dlgTitle');
-const dlgText=document.getElementById('dlgText');
-const dlgOkBtn=document.getElementById('dlgOk');
-const dlgCancelBtn=document.getElementById('dlgCancel');
-function closeDlg(){dlgBg.classList.remove('show');dlgFinalCb=null;dlgStep=0;dlgOkBtn.style.cssText='';}
-function confirmDouble(t1,m1,fn){
-  dlgStep=1;dlgFinalCb=fn;
-  dlgTitle.textContent=t1;dlgText.textContent=m1;
-  dlgOkBtn.textContent='המשך';
-  dlgBg.classList.add('show');
-}
-dlgOkBtn.onclick=()=>{
-  if(dlgStep===1){
-    dlgStep=2;
-    dlgTitle.textContent='אישור סופי';
-    dlgText.textContent='פעולה זו בלתי הפיכה. להמשיך?';
-    dlgOkBtn.textContent='מחק';
-    dlgOkBtn.style.background='var(--er)';
-    dlgOkBtn.style.color='#fff';
-  }else if(dlgStep===2){
-    dlgBg.classList.remove('show');
-    const cb=dlgFinalCb;dlgFinalCb=null;dlgStep=0;dlgOkBtn.style.cssText='';
-    if(cb)cb();
-  }
-};
-dlgCancelBtn.onclick=closeDlg;
-
-// ── API ──
-async function apiCheck(number){
-  const fd=new FormData();
-  fd.append('MagneticCard',String(number).trim());
-  const r=await fetch('https://matara.pro/NedarimPlus/Mechubad/Manage.aspx?Action=GetCardTlushim',{method:'POST',body:fd});
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  return r.json();
+function toast(msg){
+  var el=document.getElementById('toast');
+  el.textContent=msg;
+  el.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t=setTimeout(function(){el.classList.remove('show')},2200);
 }
 
-// ── Check card ──
-async function checkCard(id){
-  const c=cards.find(x=>x.id===id);if(!c)return;
-  c.status='checking';c.balance=null;c.kupaName='';c.tlushim=[];c.errorMsg='';render();
-  try{
-    const data=await apiCheck(c.number);
-    if(data.Result==='Error'){c.status='error';c.errorMsg=data.Message||'שגיאה';}
-    else{
-      c.status='loaded';c.kupaName=data.Manpik_KupaName||'';
-      const active=Array.isArray(data.TlushPail)?data.TlushPail:[];
-      let total=0;const tlushim=[];
-      for(const t of active){const isMoney=!t.ProductID||t.ProductID==='0';tlushim.push({name:t.ProductName||(isMoney?'יתרה זמינה':'תלוש'),freeAmount:t.FreeAmount||'',amount:t.Amount||'',expiry:t.Expiration||'',isMoney});}
-      if(Array.isArray(data.Total)&&data.Total.length){for(const t of data.Total){if(!t.ProductId||t.ProductId==='0')total+=parseAmt(t.Units);}}
-      else{for(const t of active){if(!t.ProductID||t.ProductID==='0')total+=parseAmt(t.FreeAmount);}}
-      if(total===0&&!tlushim.length&&Array.isArray(data.data)){for(const t of data.data){if(t.FreeAmount&&t.FreeAmount!=='0 ₪'&&t.FreeAmount!=='פג תוקף'){total+=parseAmt(t.FreeAmount);tlushim.push({name:'יתרה',freeAmount:t.FreeAmount,amount:'',expiry:'',isMoney:true});}}}
-      c.balance=total;c.tlushim=tlushim;
-    }
-  }catch(e){c.status='error';c.errorMsg=e.message||'שגיאת תקשורת';}
-  save();render();
+function saveData(){
+  try{localStorage.setItem(KEY,JSON.stringify(cards))}catch(e){}
 }
 
-// ── Speech ──
-function speak(num){
-  if(!window.speechSynthesis){toast('הקראה לא נתמכת');return;}
-  speechSynthesis.cancel();
-  setTimeout(()=>{
-    const digits=dig(num).split('');
-    const chunks=[];
-    for(let i=0;i<digits.length;i+=2){chunks.push([digits[i],digits[i+1]].filter(Boolean).map(d=>HEB_DIGITS[d]).join(', '));}
-    function getBestVoice(voices){const LANGS=['he-IL','he','iw-IL','iw'];for(const l of LANGS){const v=voices.find(x=>x.lang===l);if(v)return v;}return voices.find(v=>v.lang.startsWith('he')||v.lang.startsWith('iw'))||null;}
-    function speakChunks(voices,idx){
-      if(idx>=chunks.length){toast('✓ סיים הקראה');return;}
-      const u=new SpeechSynthesisUtterance(chunks[idx]);
-      const hv=getBestVoice(voices);
-      if(hv){u.voice=hv;u.lang=hv.lang;}else{u.lang='he-IL';}
-      u.rate=speakRate;u.pitch=1;u.volume=1;
-      u.onend=()=>speakChunks(voices,idx+1);
-      u.onerror=()=>speakChunks(voices,idx+1);
-      speechSynthesis.speak(u);
-    }
-    function start(voices){toast('🔊 מקריא…');speakChunks(voices,0);}
-    const vv=speechSynthesis.getVoices();
-    if(vv.length>0){start(vv);}
-    else{let tries=0;const poll=setInterval(()=>{const v=speechSynthesis.getVoices();tries++;if(v.length>0){clearInterval(poll);start(v);}else if(tries>15){clearInterval(poll);start([]);}},200);}
-  },150);
+function loadData(){
+  try{var d=localStorage.getItem(KEY);return d?JSON.parse(d):[]}catch(e){return[]}
 }
 
-function showVoices(){
-  const vv=speechSynthesis.getVoices();
-  if(!vv.length){toast('אין קולות זמינים עדיין');return;}
-  const heb=vv.filter(v=>v.lang.startsWith('he')||v.lang.startsWith('iw'));
-  alert(heb.length?'קולות עבריים: '+heb.map(v=>v.name+'('+v.lang+')').join(', '):'אין קול עברי. קולות זמינים: '+vv.slice(0,5).map(v=>v.lang).join(', '));
+function parseNum(s){
+  var m=String(s||'').match(/\d+/g);
+  return m?m.join(''):'';
 }
 
-async function copyText(t){try{await navigator.clipboard.writeText(String(t).trim());toast('הועתק ✓');}catch(e){toast('לא הצליח להעתיק');}}
-
-// ── Sort cards: loaded with balance ASC, then zeros, then unloaded ──
-function sortedCards(){
-  const loaded_pos=cards.filter(c=>c.status==='loaded'&&(c.balance||0)>0).sort((a,b)=>(a.balance||0)-(b.balance||0));
-  const loaded_zero=cards.filter(c=>c.status==='loaded'&&(c.balance||0)===0);
-  const rest=cards.filter(c=>c.status!=='loaded');
-  return [...loaded_pos,...loaded_zero,...rest];
+function fmt(n){
+  return String(n||'').replace(/\D/g,'').replace(/(.{4})/g,'$1 ').trim();
 }
 
-// ── Render ──
-function buildBadge(c){
-  if(c.status==='idle')return'<span class="bdg bdg-idle">לא נבדק</span>';
-  if(c.status==='checking')return'<span class="bdg bdg-chk">בודק…</span>';
-  if(c.status==='error')return`<span class="bdg bdg-err" title="${esc(c.errorMsg)}">⚠ שגיאה</span>`;
-  const cls=(c.balance||0)>0?'bdg-ok':'bdg-zero';
-  return`<span class="bdg ${cls}">${c.balance!==null?c.balance.toLocaleString('he-IL')+' ₪':'0 ₪'}</span>`;
+function stClass(c){
+  if(c.status==='checking') return 's-checking';
+  if(c.status==='error') return 's-err';
+  if(c.status==='loaded') return (c.balance||0)>0?'s-ok':'s-zero';
+  return 's-idle';
 }
 
-function buildCard(c){
-  const revPanel=c.revealed?`
-    <div class="reveal-panel">
-      <div class="reveal-label">מספר כרטיס מלא</div>
-      <div class="reveal-num">${esc(fmt(c.number))}</div>
-      <div class="reveal-btns">
-        <button class="btn btn-o btn-sm" onclick="window._copy('${esc(dig(c.number))}')">📋 העתק</button>
-        <button class="btn btn-o btn-sm" onclick="window._speak('${esc(dig(c.number))}')">🔊 הקרא</button>
-        <button class="btn btn-o btn-sm" onclick="window._reveal('${c.id}')">הסתר</button>
-      </div>
-    </div>`:'';
+function stLabel(c){
+  if(c.status==='checking') return 'בודק...';
+  if(c.status==='error') return 'שגיאה';
+  if(c.status==='loaded') return (c.balance||0)>0?(c.balance.toLocaleString('he-IL')+' ₪'):'0 ₪';
+  return 'ממתין';
+}
 
-  const tlushPanel=c.status==='loaded'&&c.tlushim&&c.tlushim.length?`
-    <div class="tlush-section">
-      <div class="det-title">תלושים פעילים</div>
-      <div class="tgrid">${c.tlushim.map(t=>`
-        <div class="trow">
-          <div><div class="tname">${esc(t.name)}</div>${t.expiry?`<div class="texp">תוקף: ${esc(t.expiry)}</div>`:''}</div>
-          <div class="tamt ${t.isMoney?'':'units'}">${esc(t.freeAmount||'—')}</div>
-        </div>`).join('')}
-      </div>
-    </div>`:'';
-
-
-  const zeroClass=(c.status==='loaded'&&(c.balance||0)===0)?' balance-zero':'';
-  return`
-  <div class="crow${zeroClass}">
-    <div class="ctop">
-      <div>
-        <div class="cnum">${mask(c.number)}</div>
-        ${c.kupaName?`<div class="csub">${esc(c.kupaName)}</div>`:`<div class="csub m">${c.status==='error'?esc(c.errorMsg):c.status==='checking'?'בודק…':'ממתין לבדיקה'}</div>`}
-      </div>
-      <div class="ctop-right">
-        ${buildBadge(c)}
-        <button class="ibtn" onclick="window._check('${c.id}')" title="רענן">↻</button>
-        <button class="ibtn" onclick="window._del('${c.id}')" style="color:var(--er)" title="מחק">✕</button>
-      </div>
-    </div>
-    <div class="cactions">
-      <button class="abtn pri" onclick="window._reveal('${c.id}')">
-        <span class="abtn-ico">${c.revealed?'🙈':'👁'}</span>
-        <span class="abtn-lbl">${c.revealed?'הסתר':'הצג לקופה'}</span>
-      </button>
-      <button class="abtn spk" onclick="window._speak('${esc(dig(c.number))}')">
-        <span class="abtn-ico">🔊</span>
-        <span class="abtn-lbl">הקרא</span>
-      </button>
-      <button class="abtn" onclick="window._copy('${esc(dig(c.number))}')">
-        <span class="abtn-ico">📋</span>
-        <span class="abtn-lbl">העתק</span>
-      </button>
-    </div>
-    ${revPanel}
-    ${tlushPanel}
-  </div>`;
+function sortCards(){
+  cards.sort(function(a,b){
+    var pa=a.status==='loaded'?0:1;
+    var pb=b.status==='loaded'?0:1;
+    if(pa!==pb) return pa-pb;
+    return (b.balance||0)-(a.balance||0);
+  });
 }
 
 function render(){
-  const list=document.getElementById('clist');
-  const empty=document.getElementById('emptyState');
-  const sec=document.getElementById('secTitle');
-  const sum=document.getElementById('sumbar');
-  if(!cards.length){list.innerHTML='';empty.style.display='';sec.style.display='none';sum.style.display='none';return;}
-  empty.style.display='none';sec.style.display='';sum.style.display='flex';
-  const loaded=cards.filter(c=>c.status==='loaded');
-  document.getElementById('sumTotal').textContent=loaded.reduce((s,c)=>s+(c.balance||0),0).toLocaleString('he-IL')+' ₪';
+  sortCards();
+  var list=document.getElementById('list');
+  var empty=document.getElementById('emptyMsg');
+  var sum=document.getElementById('summary');
+  var loaded=cards.filter(function(c){return c.status==='loaded'});
+  var total=loaded.reduce(function(s,c){return s+(c.balance||0)},0);
   document.getElementById('sumCount').textContent=cards.length;
-  document.getElementById('sumDone').textContent=loaded.length;
-  list.innerHTML=sortedCards().map(buildCard).join('');
+  document.getElementById('sumLoaded').textContent=loaded.length;
+  document.getElementById('sumTotal').textContent=total.toLocaleString('he-IL')+' ₪';
+  sum.style.display=cards.length?'flex':'none';
+  empty.style.display=cards.length?'none':'block';
+  var html='';
+  for(var i=0;i<cards.length;i++){
+    var c=cards[i];
+    var sc=stClass(c);
+    var sl=stLabel(c);
+    html+='<div class="card">';
+    html+='<div class="card-head">';
+    html+='<div><div class="num">'+fmt(c.number)+'</div>';
+    html+='<div class="lbl">'+(c.kupaName||'לא נבדק עדיין')+'</div></div>';
+    html+='<div class="badge '+sc+'">'+sl+'</div>';
+    html+='</div>';
+    html+='<div class="card-btns">';
+    html+='<button class="mini ghost" onclick="doCheck(''+c.id+'')">בדוק</button>';
+    html+='<button class="mini ghost" onclick="doReveal(''+c.id+'')">'+( c.revealed?'הסתר':'הצג מספר')+'</button>';
+    html+='<button class="mini ghost" onclick="doCopy(''+c.number+'')">העתק</button>';
+    html+='<button class="mini ghost" onclick="doSpeak(''+c.number+'')">הקרא</button>';
+    html+='<button class="mini danger" onclick="doDelete(''+c.id+'')">מחק</button>';
+    html+='</div>';
+    if(c.revealed){
+      html+='<div class="reveal-box"><b>מספר מלא:</b> '+fmt(c.number)+'</div>';
+    }
+    html+='</div>';
+  }
+  list.innerHTML=html;
 }
 
-// ── Globals ──
-window._check=id=>checkCard(id);
-window._reveal=id=>{const c=cards.find(x=>x.id===id);if(c){c.revealed=!c.revealed;save();render();}};
-window._copy=t=>copyText(t);
-window._speak=t=>speak(t);
-window.showVoices=showVoices;
-window.setRate=(r,btn)=>{
-  speakRate=r;
-  document.querySelectorAll('.rate-btn').forEach(b=>b.classList.toggle('active',parseFloat(b.dataset.rate)===r));
-  toast('מהירות: '+btn.textContent);
+window.doCheck=function(id){
+  var c=cards.find(function(x){return x.id===id});
+  if(!c) return;
+  c.status='checking'; saveData(); render();
+  var fd=new FormData();
+  fd.append('MagneticCard',String(c.number).trim());
+  fetch('https://matara.pro/NedarimPlus/Mechubad/Manage.aspx?Action=GetCardTlushim',{method:'POST',body:fd})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    if(d.Result==='Error'){
+      c.status='error'; c.kupaName=d.Message||'שגיאה';
+    } else {
+      c.status='loaded';
+      c.kupaName=d.ManhpikKupaName||'';
+      var total=0;
+      var arr=Array.isArray(d.Total)?d.Total:(Array.isArray(d.data)?d.data:[]);
+      for(var i=0;i<arr.length;i++){
+        var v=arr[i];
+        total+=parseFloat(String(v.FreeAmount||v.Units||v.Amount||0).replace(/[^\d.]/g,''))||0;
+      }
+      c.balance=total;
+    }
+    saveData(); render();
+  })
+  .catch(function(e){
+    c.status='error'; c.kupaName=e.message||'שגיאה';
+    saveData(); render();
+  });
 };
-window._del=id=>{
-  const c=cards.find(x=>x.id===id);if(!c)return;
-  confirmDouble('מחיקת כרטיס',`למחוק את הכרטיס ${mask(c.number)}?`,()=>{cards=cards.filter(x=>x.id!==id);save();render();toast('נמחק ✓');});
+
+window.doReveal=function(id){
+  var c=cards.find(function(x){return x.id===id});
+  if(c){c.revealed=!c.revealed; saveData(); render();}
+};
+
+window.doCopy=function(num){
+  navigator.clipboard.writeText(String(num))
+  .then(function(){toast('הועתק')})
+  .catch(function(){toast('ההעתקה נכשלה')});
+};
+
+window.doSpeak=function(num){
+  if(!window.speechSynthesis){toast('הקראה לא נתמכת');return;}
+  var u=new SpeechSynthesisUtterance(String(num).split('').join(' '));
+  u.lang='he-IL';
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+};
+
+window.doDelete=function(id){
+  if(!confirm('למחוק את הכרטיס?')) return;
+  cards=cards.filter(function(c){return c.id!==id});
+  saveData(); render(); toast('נמחק');
 };
 
 function addCard(){
-  const inp=document.getElementById('cardInput');
-  const d=dig(inp.value);
-  if(d.length<8){toast('מספר קצר מדי');return;}
-  if(cards.find(c=>dig(c.number)===d)){toast('כרטיס כבר קיים');return;}
-  const card=makeCard(uid(),d);cards.unshift(card);inp.value='';save();render();
-  checkCard(card.id);
+  var inp=document.getElementById('cardInput');
+  var num=parseNum(inp.value);
+  if(num.length<8){toast('מספר קצר מדי');return;}
+  if(cards.some(function(c){return c.number===num})){toast('הכרטיס כבר קיים');return;}
+  var c={id:uid(),number:num,status:'idle',balance:null,kupaName:'',revealed:false};
+  cards.unshift(c);
+  inp.value='';
+  saveData(); render();
+  doCheck(c.id);
 }
 
-// ── Settings modal ──
-document.getElementById('settingsBtn').onclick=()=>document.getElementById('settingsModal').classList.add('show');
-document.getElementById('settingsModal').onclick=e=>{if(e.target===document.getElementById('settingsModal'))document.getElementById('settingsModal').classList.remove('show');};
+function exportBackup(){
+  if(!cards.length){toast('אין כרטיסים לגיבוי');return;}
+  var lines=['Card Backup - '+new Date().toLocaleString('he-IL'),'Count: '+cards.length,''];
+  for(var i=0;i<cards.length;i++) lines.push(JSON.stringify(cards[i]));
+  var blob=new Blob([lines.join('
+')],{type:'text/plain;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url; a.download='cards-backup-'+new Date().toISOString().slice(0,10)+'.txt';
+  a.style.display='none'; document.body.appendChild(a); a.click();
+  setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1000);
+  toast('הגיבוי נשמר');
+}
 
-// ── Theme toggle ──
-const themeBtn=document.getElementById('themeBtn');
-themeBtn.onclick=()=>{
-  const cur=document.documentElement.getAttribute('data-theme');
-  const next=cur==='dark'?'light':'dark';
-  document.documentElement.setAttribute('data-theme',next);
-  themeBtn.textContent=next==='dark'?'🌙':'☀️';
-};
+function openImport(){document.getElementById('importOverlay').classList.add('show');}
+function closeImport(){document.getElementById('importOverlay').classList.remove('show');}
 
-document.getElementById('addBtn').onclick=addCard;
-document.getElementById('cardInput').addEventListener('keydown',e=>{if(e.key==='Enter')addCard();});
-document.getElementById('cardInput').addEventListener('input',function(){this.value=fmt(this.value);});
-document.getElementById('checkAllBtn').onclick=async()=>{if(!cards.length){toast('הוסף כרטיסים קודם');return;}toast('מרענן…');for(const c of[...cards])await checkCard(c.id);toast('עודכן הכל ✓');};
-document.getElementById('clearAllBtn').onclick=()=>{
-  if(!cards.length)return;
-  confirmDouble('נקה הכל','כל הכרטיסים יימחקו לצמיתות',()=>{cards=[];save();render();toast('נוקתה ✓');});
-};
+function doImport(){
+  var f=document.getElementById('importFile').files[0];
+  var txt=document.getElementById('importText').value.trim();
+  function process(raw){
+    if(!raw){toast('אין תוכן לייבוא');return;}
+    var added=0;
+    var existing=new Set(cards.map(function(c){return c.number}));
+    var lines=raw.split(/?
+/);
+    for(var i=0;i<lines.length;i++){
+      var line=lines[i].trim();
+      if(!line) continue;
+      try{
+        var obj=JSON.parse(line);
+        if(obj&&obj.number&&!existing.has(String(obj.number))){
+          obj.number=String(obj.number);
+          obj.id=obj.id||uid();
+          obj.revealed=false;
+          cards.push(obj); existing.add(obj.number); added++;
+          continue;
+        }
+      }catch(e){}
+      var nums=line.match(/\d{8,23}/g)||[];
+      for(var j=0;j<nums.length;j++){
+        if(!existing.has(nums[j])){
+          cards.push({id:uid(),number:nums[j],status:'idle',balance:null,kupaName:'',revealed:false});
+          existing.add(nums[j]); added++;
+        }
+      }
+    }
+    saveData(); render(); closeImport();
+    toast(added?'יובאו '+added+' כרטיסים':'אין חדשים לייבוא');
+  }
+  if(f){var r=new FileReader(); r.onload=function(e){process(e.target.result)}; r.readAsText(f,'utf-8');}
+  else process(txt);
+}
 
-(async()=>{
-  const saved=loadSaved();
-  cards=saved.map(s=>makeCard(s.id,s.number));
+function setTheme(dark){
+  isDark=dark;
+  localStorage.setItem('theme',dark?'dark':'light');
+  document.documentElement.style.setProperty('--bg',dark?'#0f1115':'#f6f7fb');
+  document.documentElement.style.setProperty('--card',dark?'#181b22':'#fff');
+  document.documentElement.style.setProperty('--txt',dark?'#e7eaf0':'#111827');
+  document.documentElement.style.setProperty('--mut',dark?'#a7afbf':'#6b7280');
+  document.documentElement.style.setProperty('--bd',dark?'#2a2f3a':'#d7dbe7');
+  document.body.style.background='var(--bg)';
+}
+
+window.addEventListener('load',function(){
+  cards=loadData();
+  isDark=localStorage.getItem('theme')==='dark';
+  setTheme(isDark);
   render();
-  for(const c of cards)await checkCard(c.id);
-})();
-
-})();
-
-
-const BACKUP_FIX_V3 = true;
-(function(){
-  function dbg(msg){ const el=document.getElementById('backupDebug'); if(el){ el.style.display='block'; el.textContent=msg; } }
-  function download(filename, text){
-    const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 1000);
-  }
-  window.exportBackupTxt = function(){
-    try{
-      const count = Array.isArray(cards) ? cards.length : 0;
-      if(!count){ toast('אין מספרים לגיבוי'); return; }
-      const text = ['Nedarim backup','Created: ' + new Date().toLocaleString('he-IL'),'Count: ' + count,'',...cards.map((c,i)=>`${i+1}. ${c.number}`)].join('\n');
-      dbg('export: ' + count + ' cards');
-      download(`backup-${new Date().toISOString().slice(0,10)}.txt`, text);
-      toast('הגיבוי נשמר');
-    }catch(e){ dbg('export error: ' + e); toast('הייצוא נכשל'); }
+  document.getElementById('addBtn').onclick=addCard;
+  document.getElementById('cardInput').onkeydown=function(e){if(e.key==='Enter') addCard();};
+  document.getElementById('checkAllBtn').onclick=async function(){
+    if(!cards.length){toast('אין כרטיסים');return;}
+    for(var i=0;i<cards.length;i++){
+      doCheck(cards[i].id);
+      await new Promise(function(r){setTimeout(r,300)});
+    }
   };
-  window.importBackupTxt = function(){
-    try{
-      const sample = prompt('הדבק את תוכן קובץ הגיבוי TXT');
-      if(sample == null) return;
-      const nums = [...new Set((sample.match(/\b\d{8,23}\b/g) || []))];
-      if(!nums.length){ dbg('import: no numbers'); toast('לא נמצא גיבוי תקין'); return; }
-      const existing = new Set(cards.map(c=>c.number));
-      let added = 0;
-      for(const n of nums){ if(!existing.has(n)){ cards.unshift(makeCard(uid(), n)); added++; } }
-      save(); render();
-      dbg('import added: ' + added);
-      toast(added ? `יובאו ${added} מספרים` : 'אין מספרים חדשים לייבוא');
-    }catch(e){ dbg('import error: ' + e); toast('הייבוא נכשל'); }
-  };
-  function bind(){
-    const eb=document.getElementById('exportBtn');
-    const ib=document.getElementById('importBtn');
-    if(eb) eb.onclick = window.exportBackupTxt;
-    if(ib) ib.onclick = window.importBackupTxt;
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind); else bind();
+  document.getElementById('exportBtn').onclick=exportBackup;
+  document.getElementById('importBtn').onclick=openImport;
+  document.getElementById('importCancel').onclick=closeImport;
+  document.getElementById('importDo').onclick=doImport;
+  document.getElementById('sortBtn').onclick=function(){sortCards();saveData();render();toast('מוין לפי יתרה');};
+  document.getElementById('themeBtn').onclick=function(){setTheme(!isDark);};
+});
+
 })();
 </script>
 </body>
